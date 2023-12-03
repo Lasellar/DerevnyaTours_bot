@@ -19,14 +19,15 @@ router = Router()
 inline_kb_screen = InlineKeyboardButton(text="Отправить скриншот оплаты", callback_data="screen")
 markup = InlineKeyboardMarkup(inline_keyboard=[[inline_kb_screen]])
 pattern = r"^[-\w\.]+@([-\w]+\.)+[-\w]{2,4}$"
-marina = 427732880
+marina = int(427732880)
+julia = int(638275440)
 
 
 @router.callback_query()
 async def screen(call, state: FSMContext):
     if call.data == "screen":
         text = "Отправьте, пожалуйста, скриншот с подтверждением оплаты счета"
-        await call.message.answer(chat_id=call.message.from_user.id, text=text)
+        await call.message.answer(chat_id=call.from_user.id, text=text)
         await state.set_state(Register.screen)
 
 
@@ -34,12 +35,15 @@ async def screen(call, state: FSMContext):
 async def screen_1(msg: Message, state: FSMContext):
     if str(type(msg.photo)) != "<class 'NoneType'>":
         await state.clear()
-        await msg.forward(chat_id=290326560)
         text = f"⬆️#оплата \n@{msg.from_user.username}\n#{msg.from_user.username}"
-        await msg.answer(chat_id=290326560, text=text)
+        await msg.forward(chat_id=marina)
+        await msg.forward(chat_id=julia)
+        await msg.answer(chat_id=marina, text=text)
+        await msg.answer(chat_id=julia, text=text)
+        await msg.answer(chat_id=msg.from_user.id, text="Спасибо!")
     else:
-        await msg.answer(chat_id=290326560, text="Кажется, в этом сообщении нет "
-                                                 "фото, попробуйте еще раз")
+        await msg.answer(chat_id=msg.from_user.id, text="Кажется, в этом сообщении нет "
+                                                        "фото, попробуйте еще раз")
 
 
 @router.message(Command("start"))
@@ -88,5 +92,6 @@ async def register_mail(msg: Message, state: FSMContext):
             f"Поездка: {data['trip']}\n"
             f"Кол-во людей: {data['members']}\n"
             f"Почта: {data['mail']}")
-    await msg.answer(chat_id=290326560, text=text)
+    await msg.answer(chat_id=marina, text=text)
+    await msg.answer(chat_id=julia, text=text)
     await state.clear()
