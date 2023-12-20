@@ -1,6 +1,9 @@
-from aiogram import Router
+import time
+
+from aiogram import Router, Dispatcher
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
 from re import findall
@@ -15,12 +18,16 @@ class Register(StatesGroup):
     screen = State()
 
 
+sended = dict()
+
+
 router = Router()
 inline_kb_screen = InlineKeyboardButton(text="Отправить скриншот оплаты", callback_data="screen")
-markup = InlineKeyboardMarkup(inline_keyboard=[[inline_kb_screen]])
+inline_kb_about = InlineKeyboardButton(text='Наш сайт', url='https://www.39dereven.ru/')
+markup = InlineKeyboardMarkup(inline_keyboard=[[inline_kb_screen], [inline_kb_about]])
+
 pattern = r"^[-\w\.]+@([-\w]+\.)+[-\w]{2,4}$"
-marina = int(427732880)
-julia = int(638275440)
+me = 290326560
 
 
 @router.callback_query()
@@ -33,14 +40,19 @@ async def screen(call, state: FSMContext):
 
 @router.message(Register.screen)
 async def screen_1(msg: Message, state: FSMContext):
-    if str(type(msg.photo)) != "<class 'NoneType'>":
-        await state.clear()
-        text = f"⬆️#оплата \n@{msg.from_user.username}\n#{msg.from_user.username}"
-        await msg.forward(chat_id=marina)
-        await msg.forward(chat_id=julia)
-        await msg.answer(chat_id=marina, text=text)
-        await msg.answer(chat_id=julia, text=text)
-        await msg.answer(chat_id=msg.from_user.id, text="Спасибо!")
+    if type(msg.photo) is not None:
+        global sended
+        print(f"sended start: {sended}")
+        if sended[str(msg.from_user.id)]['sended'] == 1:
+            print('vhod')
+            await msg.forward(chat_id=me)
+        else:
+            text = f"⬆️#оплата \n@{msg.from_user.username}\n#{msg.from_user.username}"
+            await msg.answer(chat_id=me, text=text)
+            await msg.forward(chat_id=me)
+            sended[str(msg.from_user.id)]['sended'] = 1
+            print(f"sended set up: {sended}")
+            time.sleep(0.2)
     else:
         await msg.answer(chat_id=msg.from_user.id, text="Кажется, в этом сообщении нет "
                                                         "фото, попробуйте еще раз")
@@ -49,11 +61,14 @@ async def screen_1(msg: Message, state: FSMContext):
 @router.message(Command("start"))
 async def start_handler(msg: Message, state: FSMContext):
     await state.clear()
-    await msg.answer(chat_id=msg.from_user.id, text=config.start_text)
+    await msg.answer(chat_id=msg.from_user.id, text=config.start_text, reply_markup=markup)
 
 
 @router.message(Command("register"))
 async def register_trip(msg: Message, state: FSMContext):
+    global sended
+    sended[str(msg.from_user.id)] = dict()
+    sended[str(msg.from_user.id)]['sended'] = 0
     await msg.answer(chat_id=msg.from_user.id, text=config.trip_text, reply_markup=markup)
     await state.set_state(Register.trip)
 
@@ -92,6 +107,5 @@ async def register_mail(msg: Message, state: FSMContext):
             f"Поездка: {data['trip']}\n"
             f"Кол-во людей: {data['members']}\n"
             f"Почта: {data['mail']}")
-    await msg.answer(chat_id=marina, text=text)
-    await msg.answer(chat_id=julia, text=text)
+    await msg.answer(chat_id=me, text=text)
     await state.clear()
