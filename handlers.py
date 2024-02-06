@@ -27,7 +27,7 @@ inline_kb_about = InlineKeyboardButton(text='Наш сайт', url='https://www.
 markup = InlineKeyboardMarkup(inline_keyboard=[[inline_kb_screen], [inline_kb_about]])
 
 pattern = r"^[-\w\.]+@([-\w]+\.)+[-\w]{2,4}$"
-me = 290326560
+me = 1
 
 
 @router.callback_query()
